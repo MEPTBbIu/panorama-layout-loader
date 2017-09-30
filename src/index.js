@@ -105,8 +105,8 @@ export default function loader(html) {
 
   html = html.reverse().join('');
 
-    const regex = /\$\{require\([^)]*\)\}/g;
   if (options.interpolateRequire) {
+    const regex = /\$\{require\(`[^`)]*`\)\}/g;
     let result;
 
     const requires = [];
