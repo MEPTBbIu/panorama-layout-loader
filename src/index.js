@@ -38,7 +38,10 @@ function unwrapLoaderResult(src, filename, publicPath) {
 
   script.runInNewContext(sandbox);
 
-  return sandbox.exports;
+  const exported = sandbox.exports;
+  if (exported == null) return '';
+  if (typeof exported !== 'object') return exported;
+  return JSON.stringify(exported).slice(1, -1);
 }
 
 export default function loader(html) {
@@ -172,11 +175,11 @@ export default function loader(html) {
     this.loadModule(data[match], (err, source) => {
       if (err) callback(err);
 
-      const sourceExports = options.unwrap ? unwrapLoaderResult(
+      const sourceExports = options.unwrap === false ? source : unwrapLoaderResult(
         source,
         loaderUtils.urlToRequest(data[match], root),
         publicPath,
-      ) : source;
+      );
       html = html.replace(match, sourceExports);
       callback();
     });
