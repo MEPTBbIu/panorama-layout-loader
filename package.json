@@ -1,8 +1,8 @@
 {
-  "name": "html-loader",
-  "version": "0.4.5",
-  "author": "Tobias Koppers @sokra",
-  "description": "html loader module for webpack",
+  "name": "panorama-layout-loader",
+  "version": "1.0.0",
+  "author": "ark120202",
+  "description": "Panorama XML layout files loader for webpack",
   "main": "dist/cjs.js",
   "files": [
     "dist"
@@ -11,6 +11,7 @@
     "node": ">= 4.3 < 5.0.0 || >= 5.10"
   },
   "dependencies": {
+    "async-each": "^1.0.1",
     "fastparse": "^1.1.1",
     "html-minifier": "^3.0.1",
     "loader-utils": "^1.0.2",
@@ -59,10 +60,16 @@
   "peerDependencies": {
     "webpack": "^2.0.0 || ^3.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:webpack/html-loader.git"
-  },
+  "repository": "https://github.com/ark120202/panorama-layout-loader.git",
+  "keywords": [
+    "dota",
+    "dota2",
+    "panorama",
+    "valve",
+    "xml",
+    "webpack",
+    "loader"
+  ],
   "license": "MIT",
   "pre-commit": "lint-staged",
   "lint-staged": {

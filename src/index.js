@@ -1,10 +1,7 @@
 /* eslint-disable
   import/order,
   import/first,
-  arrow-parens,
-  no-undefined,
   no-param-reassign,
-  no-useless-escape,
 */
 import LoaderError from './Error';
 import loaderUtils from 'loader-utils';
@@ -13,6 +10,8 @@ import validateOptions from 'schema-utils';
 import url from 'url';
 import attrs from './lib/attrs';
 import minifier from 'html-minifier';
+import vm from 'vm';
+import asyncEach from 'async-each';
 
 const schema = require('./options');
 
@@ -20,17 +19,39 @@ function randomize() {
   return `link__${Math.random()}`;
 }
 
+function unwrapLoaderResult(src, filename, publicPath) {
+  publicPath = typeof publicPath === 'function' ? publicPath(filename) : publicPath;
+
+  const script = new vm.Script(src, {
+    filename,
+    displayErrors: true,
+  });
+  const sandbox = {
+    module: {},
+    exports: {},
+    require(resourcePath) {
+      throw new Error(`Can't load '${resourcePath}', because require is not allowed`);
+    },
+    __webpack_public_path__: publicPath,
+  };
+  sandbox.module.exports = sandbox.exports;
+
+  script.runInNewContext(sandbox);
+
+  return sandbox.exports;
+}
+
 export default function loader(html) {
   const options = loaderUtils.getOptions(this) || {};
 
-  validateOptions(schema, options, 'HTML Loader');
+  validateOptions(schema, options, 'Panorama Layout Loader');
 
-  // eslint-disable-next-line
-  const root = options.root;
+  const { root } = options;
+  const publicPath = options.publicPath || this.options.output.publicPath || '/';
 
-  let attributes = ['img:src'];
+  let attributes = ['include:src', 'Image:src'];
 
-  if (options.attrs !== undefined) {
+  if (options.attrs != null) {
     if (typeof options.attrs === 'string') attributes = options.attrs.split(' ');
     else if (Array.isArray(options.attrs)) attributes = options.attrs;
     else if (options.attrs === false) attributes = [];
@@ -42,10 +63,13 @@ export default function loader(html) {
     }
   }
 
-  const links = attrs(html, (tag, attr) => {
+  const links = attrs(html, (tag, attr, value) => {
+    // Ignore values starting with a protocol ('s2r://', 'file://').
+    if (url.parse(value).protocol != null) return false;
+
     const item = `${tag}:${attr}`;
 
-    const result = attributes.find((a) => item.indexOf(a) >= 0);
+    const result = attributes.find(a => item.indexOf(a) >= 0);
 
     return !!result;
   });
@@ -61,7 +85,7 @@ export default function loader(html) {
 
     const uri = url.parse(link.value);
 
-    if (uri.hash !== null && uri.hash !== undefined) {
+    if (uri.hash != null) {
       uri.hash = null;
 
       link.value = uri.format();
@@ -75,7 +99,6 @@ export default function loader(html) {
     const item = html.pop();
 
     html.push(item.substr(link.start + link.length));
-    // eslint-disable-next-line
     html.push(ident);
     html.push(item.substr(0, link.start));
   });
@@ -84,12 +107,11 @@ export default function loader(html) {
 
   if (options.interpolate === 'require') {
     const regex = /\$\{require\([^)]*\)\}/g;
-    // eslint-disable-next-line
     let result;
 
     const requires = [];
 
-    // eslint-disable-next-line
+    // eslint-disable-next-line no-cond-assign
     while (result = regex.exec(html)) {
       requires.push({
         length: result[0].length,
@@ -110,7 +132,6 @@ export default function loader(html) {
       data[ident] = link.value.substring(11, link.length - 3);
 
       html.push(item.substr(link.start + link.length));
-      // eslint-disable-next-line
       html.push(ident);
       html.push(item.substr(0, link.start));
     });
@@ -147,16 +168,26 @@ export default function loader(html) {
   // import template from 'file.html'
   //
   // const html = template({...locals})
-  if (options.interpolate && options.interpolate !== 'require') {
-    html = `${html}`;
-  } else {
-    html = JSON.stringify(html);
-  }
 
-  html = html.replace(/link__[0-9\.]+/g, (match) => {
-    if (!data[match]) return match;
-    return `"require('${JSON.stringify(loaderUtils.urlToRequest(data[match], root))}')"`;
+  const done = this.async();
+  asyncEach(html.match(/link__[0-9.]+/g) || [], (match, callback) => {
+    if (!data[match]) {
+      callback();
+      return;
+    }
+
+    this.loadModule(data[match], (err, source) => {
+      if (err) callback(err);
+
+      const sourceExports = options.unwrap ? unwrapLoaderResult(
+        source,
+        loaderUtils.urlToRequest(data[match], root),
+        publicPath,
+      ) : source;
+      html = html.replace(match, sourceExports);
+      callback();
+    });
+  }, (err) => {
+    done(err, err ? null : html);
   });
-
-  return `export default ${html};`;
 }

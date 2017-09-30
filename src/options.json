@@ -12,6 +12,14 @@
     },
     "interpolate": {
       "type": ["boolean", "string"]
+    },
+    "unwrap": {
+      "type": "boolean"
+    },
+    "publicPath": {
+      "not": {
+        "type": ["number", "boolean", "object"]
+      }
     }
   },
   "additionalProperties": false

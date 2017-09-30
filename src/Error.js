@@ -2,7 +2,7 @@ class LoaderError extends Error {
   constructor(err) {
     super(err);
 
-    this.name = 'HTML Loader';
+    this.name = 'Panorama Layout Loader';
     this.message = `\n\n${this.name}\n\n`;
 
     if (err.name === 'AttributesError') {
