@@ -105,8 +105,8 @@ export default function loader(html) {
 
   html = html.reverse().join('');
 
-  if (options.interpolate === 'require') {
     const regex = /\$\{require\([^)]*\)\}/g;
+  if (options.interpolateRequire) {
     let result;
 
     const requires = [];
@@ -161,13 +161,6 @@ export default function loader(html) {
 
     html = minifier.minify(html, minimize);
   }
-
-  // TODO
-  // #120 - Support exporting a template function
-  //
-  // import template from 'file.html'
-  //
-  // const html = template({...locals})
 
   const done = this.async();
   asyncEach(html.match(/link__[0-9.]+/g) || [], (match, callback) => {

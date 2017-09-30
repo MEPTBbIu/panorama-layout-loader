@@ -10,8 +10,8 @@
     "minimize": {
       "type": ["boolean", "object"]
     },
-    "interpolate": {
-      "type": ["boolean", "string"]
+    "interpolateRequire": {
+      "type": "boolean"
     },
     "unwrap": {
       "type": "boolean"
