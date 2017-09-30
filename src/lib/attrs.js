@@ -2,7 +2,7 @@
 import Parser from 'fastparse';
 
 function matcher(match, strUntilValue, name, value, index) {
-  if (!this.isRelevant(this.tag, name)) return;
+  if (!this.isRelevant(this.tag, name, value)) return;
 
   this.results.push({
     start: index + strUntilValue.length,
@@ -27,8 +27,8 @@ const parser = new Parser({
     '\\s+': true,
     // end of attributes
     '>': 'outside',
-    '(([0-9a-zA-Z\\-:]+)\\s*=\\s*\")([^\"]*)\'': matcher,
-    '(([0-9a-zA-Z\\-:]+)\\s*=\\s*\")([^\"]*)\'': matcher,
+    '(([0-9a-zA-Z\\-:]+)\\s*=\\s*\")([^\"]*)\"': matcher,
+    '(([0-9a-zA-Z\\-:]+)\\s*=\\s*\')([^\']*)\'': matcher,
     '(([0-9a-zA-Z\\-:]+)\\s*=\\s*)([^\\s>]+)': matcher,
   },
 });
